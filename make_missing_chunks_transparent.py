@@ -24,7 +24,10 @@ def get_block(img, i):
     colnum = i % 80
     return img[rownum*8:(rownum+1)*8, colnum*8:(colnum+1)*8]
 
-def is_constant(block):
+def is_constant(blocknum, block):
+    if blocknum%80 == 79:
+        # ignore last column, tolerance for jpeg artefacts
+        return np.all(np.abs(block[:,:7,:3] - block[1,1,:3]) < 4)
     return np.all(block[:,:,:3] == block[1,1,:3])
 
 def is_flagged(img, i):
@@ -35,14 +38,15 @@ def is_flagged(img, i):
     """
     MIN_CHUNK_LENGTH = 12
     block = get_block(img, i)
-    if is_constant(block) and np.all(block[1,1,:3]<250):
+    if is_constant(i, block) and np.all(block[1,1,:3]<250):
         # Heuristic: fully overexposed blocks are not missing chunks
         num_neighborflags = 0
         for neighbor_num in range(max(i-MIN_CHUNK_LENGTH,0), min(i+MIN_CHUNK_LENGTH+1,4799)):
             if neighbor_num == i:
                 continue
             neighbor_block = get_block(img, neighbor_num)
-            if is_constant(neighbor_block) and np.all(neighbor_block[1,1,:3] == block[1,1,:3]):
+            if is_constant(neighbor_num, neighbor_block) and \
+                    np.all(neighbor_block[1,1,:3] == block[1,1,:3]):
                 num_neighborflags += 1
         if num_neighborflags >= MIN_CHUNK_LENGTH:
             return True
@@ -66,8 +70,8 @@ def make_black_blocks_transparent(img):
 
     for i in range(80*60):
         block = get_block(img, i)
-        if is_constant(block):
-            if np.all(block[:,:,:3] < 4):
+        if is_constant(i, block):
+            if np.all(block[:,:,:3] < 8):
                 block[:,:,3] = 0
 
     return img
@@ -75,5 +79,5 @@ def make_black_blocks_transparent(img):
 if __name__ == "__main__":
     img = cv2.imread(sys.argv[1])
     img = make_missing_chunks_transparent(img)
-    img = make_black_blocks_transparent(img)
+    #img = make_black_blocks_transparent(img)
     cv2.imwrite(sys.argv[1].rstrip(".jpeg") + ".png", img)
