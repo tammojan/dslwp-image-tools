@@ -3,6 +3,7 @@
 import numpy as np
 import cv2
 import sys
+from argparse import ArgumentParser
 
 
 def add_alpha_channel(img):
@@ -77,7 +78,13 @@ def make_black_blocks_transparent(img):
     return img
 
 if __name__ == "__main__":
-    img = cv2.imread(sys.argv[1])
+    parser = ArgumentParser(description="Add transparency to DSLWP images")
+    parser.add_argument("-b", "--remove_black", action="store_true", help="Remove black blocks")
+    parser.add_argument("image", help="Image to clean up")
+    args = parser.parse_args()
+
+    img = cv2.imread(args.image)
     img = make_missing_chunks_transparent(img)
-    img = make_black_blocks_transparent(img)
-    cv2.imwrite(sys.argv[1].rstrip(".jpeg") + ".png", img)
+    if args.remove_black:
+        img = make_black_blocks_transparent(img)
+    cv2.imwrite(args.image.rstrip(".jpeg") + ".png", img)
