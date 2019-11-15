@@ -72,7 +72,11 @@ def make_black_blocks_transparent(img):
     for i in range(80*60):
         block = get_block(img, i)
         if is_constant(i, block, ignore_boundary=True):
-            if np.all(block[:,:7,:3] < 5):
+            if np.all(block[:,:7,:3] < 3):
+                block[:,:,3] = 0
+        if i%80==79:
+            if np.all(block[:,:,:3] == block[0,:,:3]) and \
+                 np.mean(block[:,:7,:3] < 10):
                 block[:,:,3] = 0
 
     return img
