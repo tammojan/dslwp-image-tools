@@ -30,11 +30,24 @@ def merge_images(images):
 
     return output_image
 
+def add_black_background(image):
+    """Add a black background for transparent blocks"""
+
+    image = image.copy()
+    for blocknum in range(80*60):
+        block = get_block(image, blocknum)
+        if block[0,0,3] == 0:
+            block[:,:,:3] = 0
+            block[:,:,3] = 255
+
+    return image
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Merge two DSLWP images")
     parser.add_argument("input", help="Input images", nargs="+")
     parser.add_argument("-o", "--output", help="Output image name (default: out.png)", type=str, default="out.png")
+    parser.add_argument("-b", "--black-background", help="Add black background", action="store_true")
 
     args = parser.parse_args()
 
@@ -45,5 +58,8 @@ if __name__ == "__main__":
         input_images += [input_image]
 
     output_image = merge_images(input_images)
+
+    if args.black_background:
+        output_image = add_black_background(output_image)
 
     cv2.imwrite(args.output, output_image)
