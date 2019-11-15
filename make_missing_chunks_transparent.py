@@ -24,13 +24,13 @@ def get_block(img, i):
     colnum = i % 80
     return img[rownum*8:(rownum+1)*8, colnum*8:(colnum+1)*8]
 
-def is_constant(blocknum, block):
-    if blocknum%80 == 79:
+def is_constant(blocknum, block, ignore_boundary=False):
+    if ignore_boundary and blocknum%80 == 79:
         # ignore last column, tolerance for jpeg artefacts
         return np.all(np.abs(block[:,:7,:3] - block[1,1,:3]) < 4)
     return np.all(block[:,:,:3] == block[1,1,:3])
 
-def is_flagged(img, i):
+def is_missingchunk(img, i):
     """
     Determine whether an 8x8 block should be considered as a missing block.
     The following heuristic is used: the 8x8 block should have a constant value,
@@ -46,7 +46,7 @@ def is_flagged(img, i):
                 continue
             neighbor_block = get_block(img, neighbor_num)
             if is_constant(neighbor_num, neighbor_block) and \
-                    np.all(neighbor_block[1,1,:3] == block[1,1,:3]):
+                   np.all(neighbor_block[1,1,:3] == block[1,1,:3]):
                 num_neighborflags += 1
         if num_neighborflags >= MIN_CHUNK_LENGTH:
             return True
@@ -57,7 +57,7 @@ def make_missing_chunks_transparent(img):
         img = add_alpha_channel(img)
 
     for i in range(80*60):
-        if is_flagged(img, i):
+        if is_missingchunk(img, i):
             block = get_block(img, i)
             block[:,:,3] = 0
 
@@ -70,8 +70,8 @@ def make_black_blocks_transparent(img):
 
     for i in range(80*60):
         block = get_block(img, i)
-        if is_constant(i, block):
-            if np.all(block[:,:,:3] < 8):
+        if is_constant(i, block, ignore_boundary=True):
+            if np.all(block[:,:7,:3] < 5):
                 block[:,:,3] = 0
 
     return img
@@ -79,5 +79,5 @@ def make_black_blocks_transparent(img):
 if __name__ == "__main__":
     img = cv2.imread(sys.argv[1])
     img = make_missing_chunks_transparent(img)
-    #img = make_black_blocks_transparent(img)
+    img = make_black_blocks_transparent(img)
     cv2.imwrite(sys.argv[1].rstrip(".jpeg") + ".png", img)
