@@ -2,7 +2,7 @@
 
 import numpy as np
 import cv2
-from make_transparent import make_missing_chunks_transparent
+from make_transparent import make_missing_chunks_transparent, get_block
 from argparse import ArgumentParser
 
 def merge_images(images):
@@ -22,7 +22,12 @@ def merge_images(images):
     output_image = images[0].copy()
 
     for image in images[1:]:
-        output_image = cv2.add(output_image, image)
+        for blocknum in range(80*60):
+            output_block = get_block(output_image, blocknum)
+            if output_block[0,0,3] == 0:
+                new_block = get_block(image, blocknum)
+                output_block[:,:,:] = new_block
+
     return output_image
 
 
