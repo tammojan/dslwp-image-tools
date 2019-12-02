@@ -41,13 +41,13 @@
 
     $( document ).ready(function() {
         var images_ul = $('#imageslist');
-        var image_prefix = "https://github.com/tammojan/dslwp-data/blob/master/images/img_";
+        var image_prefix = "https://raw.githubusercontent.com/tammojan/dslwp-data/master/images/img_";
 
         for (imagenum of Object.keys(imagedatabase).sort()) {
           image_url = imagedatabase[imagenum]
           images_ul.append("<li id='img_" + imagenum + 
             "'><img height=120 width=160 src='" + image_prefix +
-            "/images/img_" + imagenum + ".jpg'></img></li>")
+            imagenum + ".jpg'></img></li>")
         }
 
         createViewer();
