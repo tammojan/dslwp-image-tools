@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>DSLWP images</title>
+    <script src="js/jquery-3.4.1.min.js"></script>
+    <script src="js/viewer.js"></script>
+    <link href="css/viewer.css" rel="stylesheet">
+    <script src="js/jquery-viewer.js"></script>
+    <script src="data.js"></script>
+    <script>
+    function format_title(image, imagedata) {
+      var formatted = "";
+      var imagenum = image.src.substr(-7,3);
+      var downloaders = imagedatabase[imagenum]["Downloaders"];
+      var tags = imagedatabase[imagenum]["Tags"];
+      var taken = imagedatabase[imagenum]["Taken"];
+
+      formatted = imagenum + ": " + tags; 
+      return formatted;
+    }
+
+    function viewerFilter(img) {
+      // TODO: make viewer show just filtered images, not all
+      var jquery_img = $(img);
+      //console.log(img.src);
+      //console.log(jquery_img.is(":visible"));
+      return true;
+    }
+
+    function createViewer() {
+      $('#images').viewer({
+        inline: false,
+        transition: false,
+        rotatable: false,
+        movable: false,
+        scalable: false,
+        title: [1, format_title],
+        filter: viewerFilter,
+        toolbar: false
+      });
+    }
+
+    $( document ).ready(function() {
+        var images_ul = $('#imageslist');
+        var image_prefix = "https://raw.githubusercontent.com/tammojan/dslwp-data/master/images/corrected/img_";
+
+        for (imagenum of Object.keys(imagedatabase).sort()) {
+          image_url = imagedatabase[imagenum]
+          images_ul.append("<li id='img_" + imagenum + 
+            "'><img height=120 width=160 src='" + image_prefix +
+            imagenum + ".jpg'></img></li>")
+        }
+
+        createViewer();
+    });
+
+    function makeFilterFromButtons() {
+      var tagsToInclude = [];
+      var tagsToExclude = [];
+
+      var buttons_array = $('#tagselectors').children().toArray();
+      for (buttonnr in buttons_array) {
+        var buttonText = buttons_array[buttonnr].textContent;
+        if (buttonText[0] == "✅") {
+          tagsToInclude.push(buttonText.substr(2, 100));
+        } else if (buttonText[0] == "❌") {
+          tagsToExclude.push(buttonText.substr(2, 100));
+        }
+      }
+      return [tagsToInclude, tagsToExclude];
+    }
+
+    function toggleButton(caller) {
+      var buttonText = caller.textContent;
+
+      if (buttonText[0] == "✅") {
+        buttonText = "❌ " + buttonText.substr(2, 100);
+      } else if (buttonText[0] == "❌") {
+        buttonText = buttonText.substr(2, 100);
+      } else {
+        buttonText = "✅ " + buttonText;
+      }
+
+      caller.textContent = buttonText;
+
+      filterImages(makeFilterFromButtons());
+
+      var images = $("#images");
+      var viewer = images.data('viewer');
+    }
+
+    function filterImages(filters) {
+      tagsToInclude = filters[0];
+      tagsToExclude = filters[1];
+      for (imagenum in imagedatabase) {
+        $('#img_'+imagenum).show();
+        for (tagnum in tagsToInclude) {
+          tag = tagsToInclude[tagnum].toLowerCase();
+          if (!imagedatabase[imagenum]["Tags"].toLowerCase().includes(tag)) {
+            $('#img_'+imagenum).hide();
+          }
+        }
+        for (tagnum in tagsToExclude) {
+          tag = tagsToExclude[tagnum].toLowerCase();
+          if (imagedatabase[imagenum]["Tags"].toLowerCase().includes(tag)) {
+            $('#img_'+imagenum).hide();
+          }
+        }
+      }
+    }
+    </script>
+    <style>
+body {
+background: #888;
+}
+ul li {
+display: inline-block;
+height: 120px;
+width: 160px;
+padding: 0px;
+margin: 0px;
+}
+ul li img {
+padding: 0px;
+margin: 0px;
+}
+.viewer-title {
+font-size: 16px;
+font-weight: bold;
+font-family: sans-serif;
+}
+    </style>
+  </head>
+  <body>
+    <div id="tagselectors">
+    <button onclick="toggleButton(this)">Earthrise</button>
+    <button onclick="toggleButton(this)">Earth</button>
+    <button onclick="toggleButton(this)">Moon</button>
+    <button onclick="toggleButton(this)">Sky</button>
+    <button onclick="toggleButton(this)">Eclipse</button>
+    <button onclick="toggleButton(this)">Timelapse</button>
+    <button onclick="toggleButton(this)">Panorama</button>
+    <button onclick="toggleButton(this)">Lens flare</button>
+    <button onclick="toggleButton(this)">Stars</button>
+    <button onclick="toggleButton(this)">Planet</button>
+    </div>
+    <div id="images">
+      <ul id="imageslist" style="margin:0 auto;">
+
+      </ul>
+    </div>
+    <p>Images CC-BY 4.0 DSLWP amateur radio team</p>
+
+    <p>This page is created from <a href="https://github.com/tammojan/dslwp-image-tools">https://github.com/tammojan/dslwp-image-tools</a>. The source is licensed under GPL v3.</p>
+  </body>
+</html>
